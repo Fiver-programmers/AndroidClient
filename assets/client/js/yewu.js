@@ -45,14 +45,14 @@ var pchengji = {};
 
     pchengji.tpl =
        '<tr height="20px" >'+
-        '<td align="centre" width="20%">%s</td>'+
-        '<td align="centre" width="25%">%s</td>'+
-        '<td align="centre" width="20%">%s</td>'+
-        '<td align="centre" width="20%">%s</td>'+
-        '<td align="centre" width="15%"><a href="javascript:download(%s);" style="text-decoration:none">下载</a></td>'+
+        '<td align="centre" width="30%">%s</td>'+
+        '<td align="centre" width="30%">%s</td>'+
+        '<td align="centre" width="15%">%s</td>'+
+        '<td align="centre" width="15%">%s</td>'+
+        '<td align="centre" width="10%"><a href="javascript:download(%s,%s);" style="text-decoration:none">下载</a></td>'+
         '</tr>';
 //filename uploadtime  size  upuser  fileurl
-pchengji.colums = ["filename","uploadtime","size","upuser","fileurl"];
+pchengji.colums = ["filename","uploadtime","size","upuser","fileurl","filename"];
 
 
 $(function(){
@@ -90,19 +90,56 @@ function toListFile(type){
     });
 }
 
-function toFileDetail(id){
-    var obj = getObjectById(id,focuslist);
-    changePage('detailpage');
-    $("#detailshow div").hide();
-    $("#detailshow div").eq(0).show();
-    $("#detailshow div").eq(6).show();
-    $("#detailshow div").eq(7).show();
-    $("#vtitle").text("姓名:"+obj.title);
-    $("#vcourse").text("课程:"+obj.course);
-    $("#vscore").text("分数:"+obj.score);
 
+function localFile(fileUrl,filename) {
+    fileUrl = fileUrl || downloadUrl+"?attach="+focusobj.attach;
+    filename = filename || focusobj.attach;
+    window.requestFileSystem(LocalFileSystem.PERSISTENT,  5*1024*1024, function(fileSystem){
+        //创建目录
+        fileSystem.root.getDirectory("file_mobile", {create:true},
+            function(fileEntry){ },
+            function(){  console.log("创建目录失败");});
+
+        var _localFile = "file_mobile/"+filename;
+        var _url = fileUrl;
+        //查找文件
+        fileSystem.root.getFile(_localFile, null, function(fileEntry){
+            //文件存在就直接显示
+            showLoader("文件已经下载过了!",true);
+        }, function(){
+            //否则就到网络下载图片!
+            fileSystem.root.getFile(_localFile, {create:true}, function(fileEntry){
+                var targetURL = fileEntry.toURL();
+                download(_url,targetURL);
+            },function(){
+                alert('下载图片出错');
+            });
+        });
+
+    }, function(evt){
+        console.log("加载文件系统出现错误");
+    });
 }
 
+
+function download(fileUrl,targetUrl){
+    showLoader("正在下载请稍候!");
+    var fileTransfer = new FileTransfer();
+    var uri = encodeURI(fileUrl);
+
+    fileTransfer.download(uri,targetUrl,
+        function(entry) {
+            showLoader("下载成功,文件已保存到file_mobile文件夹下",true);
+            console.log("download complete: " + entry.fullPath);
+        },
+        function(error) {
+            console.log("download error source " + error.source);
+            console.log("download error target " + error.target);
+            console.log("upload error code" + error.code);
+        },
+        false
+    );
+}
 
 /**-----------资料下载业务     结束-----------**/
 

@@ -13,7 +13,6 @@ var uploadUrl = rootUrl+"Upload";
 
 
 function ownpage(el){
-
     $("#showimg").css({"left":"0px","top":"0px"});
     changePage("imgshow");
     $("#showimg").attr("src",el.src);
